@@ -15,6 +15,19 @@ try {
                 $controller->show($id);
             }
             break;
+        case 'create':
+            $controller->create();
+            break;
+        case 'edit':
+            if ($id) {
+                $controller->edit($id);
+            }
+            break;
+        case 'delete':
+            if ($id) {
+                $controller->delete($id);
+            }
+            break;
         case 'upload':
             if ($id) {
                 $controller->uploadImage($id);
