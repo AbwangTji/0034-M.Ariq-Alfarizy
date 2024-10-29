@@ -1,72 +1,96 @@
 <?php
-class User {
-    private $db;
-    
+require_once 'app/models/user.php';
+
+class UserController {
+    private $userModel;
+    private $uploadDir;
+
     public function __construct($dbConnection) {
-        $this->db = $dbConnection;    
+        $this->userModel = new User($dbConnection);
+        $this->uploadDir = 'assets/images/';
     }
 
-    public function getAllUsers() {
+    public function index() {
         try {
-            $stmt = $this->db->query("SELECT * FROM users");
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch(PDOException $e) {
-            throw new Exception("Query failed: " . $e->getMessage());
+            $users = $this->userModel->getAllUsers();
+            require_once 'app/views/user/index.php';
+        } catch(Exception $e) {
+            die("Error: " . $e->getMessage());
         }
     }
 
-    public function getUserById($id) {
+    public function show($id) {
         try {
-            $stmt = $this->db->prepare("SELECT * FROM users WHERE id = :id");
-            $stmt->bindParam(':id', $id);
-            $stmt->execute();
-            return $stmt->fetch(PDO::FETCH_ASSOC);
-        } catch(PDOException $e) {
-            throw new Exception("Query failed: " . $e->getMessage());
+            $user = $this->userModel->getUserById($id);
+            if (!$user) {
+                die("User not found");
+            }
+            require_once 'app/views/user/detail.php';
+        } catch(Exception $e) {
+            die("Error: " . $e->getMessage());
         }
     }
 
-    public function createUser($name, $email) {
-        try {
-            $stmt = $this->db->prepare("INSERT INTO users (name, email) VALUES (:name, :email)");
-            $stmt->bindParam(':name', $name);
-            $stmt->bindParam(':email', $email);
-            return $stmt->execute();
-        } catch(PDOException $e) {
-            throw new Exception("Create failed: " . $e->getMessage());
+    public function create() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            try {
+                $name = $_POST['name'];
+                $email = $_POST['email'];
+                $this->userModel->createUser($name, $email);
+                header("Location: index.php");
+                exit;
+            } catch(Exception $e) {
+                die("Error creating user: " . $e->getMessage());
+            }
+        } else {
+            require_once 'app/views/user/create.php';
         }
     }
 
-    public function updateUser($id, $name, $email) {
+    public function edit($id) {
         try {
-            $stmt = $this->db->prepare("UPDATE users SET name = :name, email = :email WHERE id = :id");
-            $stmt->bindParam(':id', $id);
-            $stmt->bindParam(':name', $name);
-            $stmt->bindParam(':email', $email);
-            return $stmt->execute();
-        } catch(PDOException $e) {
-            throw new Exception("Update failed: " . $e->getMessage());
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                $name = $_POST['name'];
+                $email = $_POST['email'];
+                $this->userModel->updateUser($id, $name, $email);
+                header("Location: index.php");
+                exit;
+            } else {
+                $user = $this->userModel->getUserById($id);
+                if (!$user) {
+                    die("User not found");
+                }
+                require_once 'app/views/user/edit.php';
+            }
+        } catch(Exception $e) {
+            die("Error editing user: " . $e->getMessage());
         }
     }
 
-    public function deleteUser($id) {
+    public function delete($id) {
         try {
-            $stmt = $this->db->prepare("DELETE FROM users WHERE id = :id");
-            $stmt->bindParam(':id', $id);
-            return $stmt->execute();
-        } catch(PDOException $e) {
-            throw new Exception("Delete failed: " . $e->getMessage());
+            $this->userModel->deleteUser($id);
+            header("Location: index.php");
+            exit;
+        } catch(Exception $e) {
+            die("Error deleting user: " . $e->getMessage());
         }
     }
 
-    public function updatePicture($id, $picture) {
+    public function uploadImage($id) {
         try {
-            $stmt = $this->db->prepare("UPDATE users SET picture = :picture WHERE id = :id");
-            $stmt->bindParam(':id', $id);
-            $stmt->bindParam(':picture', $picture);
-            return $stmt->execute();
-        } catch(PDOException $e) {
-            throw new Exception("Update failed: " . $e->getMessage());
+            if (isset($_FILES['picture']) && $_FILES['picture']['error'] === UPLOAD_ERR_OK) {
+                $tempName = $_FILES['picture']['tmp_name'];
+                $fileName = time() . '_' . $_FILES['picture']['name'];
+                $uploadPath = $this->uploadDir . $fileName;
+                
+                if (move_uploaded_file($tempName, $uploadPath)) {
+                    $this->userModel->updatePicture($id, $fileName);
+                }
+            }
+            header("Location: index.php?action=show&id=" . $id);
+        } catch(Exception $e) {
+            die("Error uploading image: " . $e->getMessage());
         }
     }
 }
