@@ -11,7 +11,7 @@ class User {
             $stmt = $this->db->query("SELECT * FROM users");
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch(PDOException $e) {
-            die("Query failed: " . $e->getMessage());
+            throw new Exception("Query failed: " . $e->getMessage());
         }
     }
 
@@ -22,7 +22,40 @@ class User {
             $stmt->execute();
             return $stmt->fetch(PDO::FETCH_ASSOC);
         } catch(PDOException $e) {
-            die("Query failed: " . $e->getMessage());
+            throw new Exception("Query failed: " . $e->getMessage());
+        }
+    }
+
+    public function createUser($name, $email) {
+        try {
+            $stmt = $this->db->prepare("INSERT INTO users (name, email) VALUES (:name, :email)");
+            $stmt->bindParam(':name', $name);
+            $stmt->bindParam(':email', $email);
+            return $stmt->execute();
+        } catch(PDOException $e) {
+            throw new Exception("Create failed: " . $e->getMessage());
+        }
+    }
+
+    public function updateUser($id, $name, $email) {
+        try {
+            $stmt = $this->db->prepare("UPDATE users SET name = :name, email = :email WHERE id = :id");
+            $stmt->bindParam(':id', $id);
+            $stmt->bindParam(':name', $name);
+            $stmt->bindParam(':email', $email);
+            return $stmt->execute();
+        } catch(PDOException $e) {
+            throw new Exception("Update failed: " . $e->getMessage());
+        }
+    }
+
+    public function deleteUser($id) {
+        try {
+            $stmt = $this->db->prepare("DELETE FROM users WHERE id = :id");
+            $stmt->bindParam(':id', $id);
+            return $stmt->execute();
+        } catch(PDOException $e) {
+            throw new Exception("Delete failed: " . $e->getMessage());
         }
     }
 
@@ -33,7 +66,7 @@ class User {
             $stmt->bindParam(':picture', $picture);
             return $stmt->execute();
         } catch(PDOException $e) {
-            die("Update failed: " . $e->getMessage());
+            throw new Exception("Update failed: " . $e->getMessage());
         }
     }
 }
