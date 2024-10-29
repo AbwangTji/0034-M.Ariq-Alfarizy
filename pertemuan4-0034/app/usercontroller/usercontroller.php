@@ -1,50 +1,72 @@
 <?php
-require_once 'app/models/user.php';
-
-class UserController {
-    private $userModel;
-    private $uploadDir;
-
+class User {
+    private $db;
+    
     public function __construct($dbConnection) {
-        $this->userModel = new User($dbConnection);
-        $this->uploadDir = 'assets/images/';
+        $this->db = $dbConnection;    
     }
 
-    public function index() {
+    public function getAllUsers() {
         try {
-            $users = $this->userModel->getAllUsers();
-            require_once 'app/views/user/index.php';
-        } catch(Exception $e) {
-            die("Error: " . $e->getMessage());
+            $stmt = $this->db->query("SELECT * FROM users");
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch(PDOException $e) {
+            throw new Exception("Query failed: " . $e->getMessage());
         }
     }
 
-    public function show($id) {
+    public function getUserById($id) {
         try {
-            $user = $this->userModel->getUserById($id);
-            if (!$user) {
-                die("User not found");
-            }
-            require_once 'app/views/user/detail.php';
-        } catch(Exception $e) {
-            die("Error: " . $e->getMessage());
+            $stmt = $this->db->prepare("SELECT * FROM users WHERE id = :id");
+            $stmt->bindParam(':id', $id);
+            $stmt->execute();
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch(PDOException $e) {
+            throw new Exception("Query failed: " . $e->getMessage());
         }
     }
 
-    public function uploadImage($id) {
+    public function createUser($name, $email) {
         try {
-            if (isset($_FILES['picture']) && $_FILES['picture']['error'] === UPLOAD_ERR_OK) {
-                $tempName = $_FILES['picture']['tmp_name'];
-                $fileName = time() . '_' . $_FILES['picture']['name'];
-                $uploadPath = $this->uploadDir . $fileName;
-                
-                if (move_uploaded_file($tempName, $uploadPath)) {
-                    $this->userModel->updatePicture($id, $fileName);
-                }
-            }
-            header("Location: index.php?action=show&id=" . $id);
-        } catch(Exception $e) {
-            die("Error uploading image: " . $e->getMessage());
+            $stmt = $this->db->prepare("INSERT INTO users (name, email) VALUES (:name, :email)");
+            $stmt->bindParam(':name', $name);
+            $stmt->bindParam(':email', $email);
+            return $stmt->execute();
+        } catch(PDOException $e) {
+            throw new Exception("Create failed: " . $e->getMessage());
+        }
+    }
+
+    public function updateUser($id, $name, $email) {
+        try {
+            $stmt = $this->db->prepare("UPDATE users SET name = :name, email = :email WHERE id = :id");
+            $stmt->bindParam(':id', $id);
+            $stmt->bindParam(':name', $name);
+            $stmt->bindParam(':email', $email);
+            return $stmt->execute();
+        } catch(PDOException $e) {
+            throw new Exception("Update failed: " . $e->getMessage());
+        }
+    }
+
+    public function deleteUser($id) {
+        try {
+            $stmt = $this->db->prepare("DELETE FROM users WHERE id = :id");
+            $stmt->bindParam(':id', $id);
+            return $stmt->execute();
+        } catch(PDOException $e) {
+            throw new Exception("Delete failed: " . $e->getMessage());
+        }
+    }
+
+    public function updatePicture($id, $picture) {
+        try {
+            $stmt = $this->db->prepare("UPDATE users SET picture = :picture WHERE id = :id");
+            $stmt->bindParam(':id', $id);
+            $stmt->bindParam(':picture', $picture);
+            return $stmt->execute();
+        } catch(PDOException $e) {
+            throw new Exception("Update failed: " . $e->getMessage());
         }
     }
 }
