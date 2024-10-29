@@ -7,7 +7,11 @@
 </head>
 <body>
     <div class="container mt-5">
-        <h1 class="mb-4">User List</h1>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>User List</h1>
+            <a href="index.php?action=create" class="btn btn-success">Add New User</a>
+        </div>
+        
         <table class="table table-striped">
             <thead>
                 <tr>
@@ -25,12 +29,17 @@
                     <td><?php echo htmlspecialchars($user['name']); ?></td>
                     <td><?php echo htmlspecialchars($user['email']); ?></td>
                     <td>
-                        <img src="<?php echo $user['picture'] ? 'assets/images/' . htmlspecialchars($user['picture']) : 'assets/images/default.jpg'; ?>" 
+                        <img src="<?php echo $user['picture'] ? 'assets/images/' . htmlspecialchars($user['picture']) : 'assets/images/default.jpg'; ?>"
                              alt="Profile" class="img-thumbnail" style="width: 50px; height: 50px; object-fit: cover;">
                     </td>
                     <td>
                         <a href="index.php?action=show&id=<?php echo $user['id']; ?>" 
                            class="btn btn-info btn-sm">Detail</a>
+                        <a href="index.php?action=edit&id=<?php echo $user['id']; ?>" 
+                           class="btn btn-warning btn-sm">Edit</a>
+                        <a href="index.php?action=delete&id=<?php echo $user['id']; ?>" 
+                           class="btn btn-danger btn-sm" 
+                           onclick="return confirm('Are you sure you want to delete this user?')">Delete</a>
                     </td>
                 </tr>
                 <?php endforeach; ?>
